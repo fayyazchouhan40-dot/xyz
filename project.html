@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Emergency Shelter Allocation System</title>
+<style>
+:root{
+  --bg:#f3f5f9; --card:#ffffff; --ink:#1b2430; --muted:#6a7687; --line:#e1e6ee;
+  --brand:#c62828; --brand-dark:#8e1b1b; --blue:#1d5fd1; --green:#1b8a4b; --amber:#d98a00; --red:#d32f2f;
+  --green-bg:#e3f5ea; --amber-bg:#fff1d6; --red-bg:#fde4e4; --blue-bg:#e4edfc; --gray-bg:#eef1f5;
+  --radius:12px; --shadow:0 1px 3px rgba(20,30,50,.08),0 4px 14px rgba(20,30,50,.05);
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink);font-size:14px;line-height:1.45}
+header{background:linear-gradient(135deg,var(--brand-dark),var(--brand));color:#fff;padding:14px 24px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;position:sticky;top:0;z-index:20;box-shadow:0 2px 10px rgba(0,0,0,.25)}
+header h1{margin:0;font-size:18px;font-weight:700;letter-spacing:.2px}
+header .sub{font-size:12px;opacity:.85}
+.live{display:flex;align-items:center;gap:6px;margin-left:auto;font-size:12px}
+.live i{width:9px;height:9px;border-radius:50%;background:#7CFFB0;box-shadow:0 0 0 0 rgba(124,255,176,.7);animation:pulse 1.8s infinite}
+@keyframes pulse{70%{box-shadow:0 0 0 8px rgba(124,255,176,0)}100%{box-shadow:0 0 0 0 rgba(124,255,176,0)}}
+nav{background:#fff;border-bottom:1px solid var(--line);padding:0 18px;display:flex;gap:4px;overflow-x:auto;position:sticky;top:58px;z-index:15}
+nav button{border:0;background:none;padding:13px 16px;font-size:14px;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:3px solid transparent;white-space:nowrap}
+nav button:hover{color:var(--ink)}
+nav button.active{color:var(--brand);border-color:var(--brand)}
+nav .badge{background:var(--brand);color:#fff;border-radius:10px;padding:1px 7px;font-size:11px;margin-left:5px}
+main{max-width:1280px;margin:0 auto;padding:22px 18px 60px}
+section.tab{display:none}section.tab.active{display:block}
+.grid{display:grid;gap:14px}
+.kpis{grid-template-columns:repeat(auto-fit,minmax(170px,1fr));margin-bottom:18px}
+.kpi{background:var(--card);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow);border-left:5px solid var(--blue)}
+.kpi .v{font-size:28px;font-weight:800}
+.kpi .l{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.6px;font-weight:600}
+.kpi.red{border-color:var(--red)}.kpi.green{border-color:var(--green)}.kpi.amber{border-color:var(--amber)}
+.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px}
+.card h3{margin:0 0 12px;font-size:15px}
+.two{grid-template-columns:2fr 1fr}
+@media(max-width:900px){.two{grid-template-columns:1fr}}
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;align-items:center}
+.toolbar .sp{flex:1}
+input,select,textarea{font:inherit;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--ink);width:100%}
+.toolbar input,.toolbar select{width:auto;min-width:150px}
+input:focus,select:focus,textarea:focus{outline:2px solid #b7cdf5;border-color:var(--blue)}
+.btn{border:0;border-radius:8px;padding:8px 14px;font-weight:600;cursor:pointer;font-size:13px;background:var(--gray-bg);color:var(--ink)}
+.btn:hover{filter:brightness(.95)}
+.btn.primary{background:var(--brand);color:#fff}
+.btn.blue{background:var(--blue);color:#fff}
+.btn.green{background:var(--green);color:#fff}
+.btn.ghost{background:transparent;border:1px solid var(--line)}
+.btn.danger{background:var(--red-bg);color:var(--red)}
+.btn.sm{padding:5px 10px;font-size:12px}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.chip{display:inline-block;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:600;background:var(--blue-bg);color:var(--blue);margin:2px 3px 2px 0}
+.chip.need{background:var(--amber-bg);color:#8a5a00}
+.chip.ok{background:var(--green-bg);color:var(--green)}
+.chip.bad{background:var(--red-bg);color:var(--red)}
+.chip.gray{background:var(--gray-bg);color:var(--muted)}
+.pill{padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px}
+.pill.open{background:var(--green-bg);color:var(--green)}
+.pill.full{background:var(--red-bg);color:var(--red)}
+.pill.closed{background:var(--gray-bg);color:var(--muted)}
+.pill.critical{background:var(--red);color:#fff}
+.pill.high{background:var(--amber);color:#fff}
+.pill.normal{background:var(--gray-bg);color:var(--muted)}
+.bar{height:11px;background:var(--gray-bg);border-radius:8px;overflow:hidden}
+.bar>div{height:100%;border-radius:8px;transition:width .4s}
+.bar .g{background:var(--green)}.bar .a{background:var(--amber)}.bar .r{background:var(--red)}
+.shelters{grid-template-columns:repeat(auto-fill,minmax(330px,1fr))}
+.shelter h4{margin:0;font-size:16px}
+.shelter .meta{color:var(--muted);font-size:12px;margin:2px 0 10px}
+.shelter .row{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.shelter .nums{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin:6px 0 10px}
+.shelter .nums b{color:var(--ink)}
+.residents{margin-top:10px;border-top:1px dashed var(--line);padding-top:8px;font-size:12px}
+.residents .res{display:flex;justify-content:space-between;align-items:center;padding:4px 0}
+.actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px}
+table{width:100%;border-collapse:collapse;background:var(--card);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow)}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:middle}
+th{background:#f7f9fc;font-size:12px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted)}
+tr:last-child td{border-bottom:0}
+.tablewrap{overflow-x:auto;border-radius:var(--radius)}
+.alloc{grid-template-columns:340px 1fr;align-items:start}
+@media(max-width:900px){.alloc{grid-template-columns:1fr}}
+.queue .item{padding:11px;border:1px solid var(--line);border-radius:10px;margin-bottom:8px;cursor:pointer;background:#fff}
+.queue .item:hover{border-color:var(--blue)}
+.queue .item.sel{border-color:var(--blue);background:var(--blue-bg)}
+.queue .item .top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.rec{border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:10px;display:flex;gap:14px;align-items:center}
+.rec.best{border-color:var(--green);background:#f5fcf8}
+.rec .score{min-width:54px;height:54px;border-radius:50%;display:grid;place-items:center;font-weight:800;font-size:16px;background:var(--green-bg);color:var(--green)}
+.rec.no .score{background:var(--gray-bg);color:var(--muted);font-size:20px}
+.rec.no{opacity:.8}
+.rec .info{flex:1}
+.empty{padding:30px;text-align:center;color:var(--muted)}
+.log{max-height:300px;overflow:auto;font-size:12px}
+.log div{padding:6px 0;border-bottom:1px solid var(--line)}
+.log time{color:var(--muted);margin-right:6px}
+.alert{padding:9px 12px;border-radius:8px;margin-bottom:8px;font-size:13px}
+.alert.r{background:var(--red-bg);color:#8d1e1e}.alert.a{background:var(--amber-bg);color:#7a5100}.alert.g{background:var(--green-bg);color:#14653a}
+dialog{border:0;border-radius:14px;padding:0;width:min(560px,94vw);box-shadow:0 20px 60px rgba(0,0,0,.35)}
+dialog::backdrop{background:rgba(15,20,30,.55)}
+dialog form{padding:20px}
+dialog h3{margin:0 0 14px}
+.f{margin-bottom:12px}.f label{display:block;font-size:12px;font-weight:600;color:var(--muted);margin-bottom:4px}
+.f2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.checks{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.checks label{display:flex;align-items:center;gap:7px;font-size:13px;color:var(--ink);font-weight:500;padding:6px 8px;border:1px solid var(--line);border-radius:8px;cursor:pointer}
+.checks input{width:auto}
+.dlg-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}
+#toasts{position:fixed;right:16px;bottom:16px;display:flex;flex-direction:column;gap:8px;z-index:100}
+.toast{background:#1b2430;color:#fff;padding:11px 16px;border-radius:10px;box-shadow:var(--shadow);font-size:13px;max-width:360px;animation:in .25s}
+.toast.ok{background:var(--green)}.toast.err{background:var(--red)}
+@keyframes in{from{transform:translateY(12px);opacity:0}}
+.zones{display:flex;flex-direction:column;gap:10px}
+.zone .row{display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px}
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>🏠 Emergency Shelter Allocation System</h1>
+    <div class="sub">Match displaced people with the right shelter — fast, fair and trackable</div>
+  </div>
+  <div class="live"><i></i><span id="clock"></span></div>
+</header>
+
+<nav id="nav">
+  <button data-tab="dashboard" class="active">📊 Dashboard</button>
+  <button data-tab="shelters">🏕️ Shelters</button>
+  <button data-tab="people">👥 People / Families <span class="badge" id="waitBadge">0</span></button>
+  <button data-tab="allocation">🎯 Allocation</button>
+</nav>
+
+<main>
+<!-- DASHBOARD -->
+<section class="tab active" id="tab-dashboard">
+  <div class="grid kpis" id="kpis"></div>
+  <div class="grid two">
+    <div class="card">
+      <h3>Shelter occupancy (live)</h3>
+      <div id="dashBars"></div>
+    </div>
+    <div class="grid" style="gap:14px">
+      <div class="card"><h3>⚠️ Alerts</h3><div id="alerts"></div></div>
+      <div class="card"><h3>Zone-wise capacity</h3><div class="zones" id="zones"></div></div>
+    </div>
+  </div>
+  <div class="card" style="margin-top:14px"><h3>Recent activity</h3><div class="log" id="log"></div></div>
+</section>
+
+<!-- SHELTERS -->
+<section class="tab" id="tab-shelters">
+  <div class="toolbar">
+    <input id="shSearch" placeholder="Search shelter / zone…">
+    <select id="shFilter">
+      <option value="all">All shelters</option>
+      <option value="available">Available (has space)</option>
+      <option value="full">Full</option>
+      <option value="closed">Closed</option>
+    </select>
+    <span class="sp"></span>
+    <button class="btn primary" id="addShelter">+ Add shelter</button>
+  </div>
+  <div class="grid shelters" id="shelterGrid"></div>
+</section>
+
+<!-- PEOPLE -->
+<section class="tab" id="tab-people">
+  <div class="toolbar">
+    <input id="pSearch" placeholder="Search name / zone…">
+    <select id="pStatus">
+      <option value="all">All</option><option value="waiting">Waiting</option><option value="allocated">Allocated</option>
+    </select>
+    <select id="pPriority">
+      <option value="all">Any priority</option><option value="critical">Critical</option><option value="high">High</option><option value="normal">Normal</option>
+    </select>
+    <span class="sp"></span>
+    <button class="btn primary" id="addGroup">+ Register people</button>
+  </div>
+  <div class="tablewrap"><table>
+    <thead><tr><th>Name / Family</th><th>Size</th><th>From zone</th><th>Requirements</th><th>Priority</th><th>Status</th><th></th></tr></thead>
+    <tbody id="peopleBody"></tbody>
+  </table></div>
+</section>
+
+<!-- ALLOCATION -->
+<section class="tab" id="tab-allocation">
+  <div class="toolbar">
+    <button class="btn green" id="autoAlloc">⚡ Auto-allocate all waiting</button>
+    <button class="btn danger" id="releaseAll">Release all allocations</button>
+    <span class="sp"></span>
+    <span style="color:var(--muted);font-size:12px">Auto-allocation order: Critical → High → Normal, then most needs, then largest group.</span>
+  </div>
+  <div class="grid alloc">
+    <div class="card queue">
+      <h3>Waiting queue</h3>
+      <div id="queue"></div>
+    </div>
+    <div class="card">
+      <h3 id="recTitle">Select a group to see matching shelters</h3>
+      <div id="recs"></div>
+    </div>
+  </div>
+</section>
+</main>
+
+<!-- Shelter dialog -->
+<dialog id="shDlg">
+  <form method="dialog" id="shForm">
+    <h3 id="shDlgTitle">Add shelter</h3>
+    <div class="f"><label>Shelter name</label><input id="shName" required></div>
+    <div class="f2">
+      <div class="f"><label>Zone / Area</label><select id="shZone"></select></div>
+      <div class="f"><label>Status</label><select id="shStatus"><option value="open">Open</option><option value="closed">Closed</option></select></div>
+    </div>
+    <div class="f2">
+      <div class="f"><label>Total capacity (people)</label><input type="number" id="shCap" min="1" required></div>
+      <div class="f"><label>Already occupied (walk-ins)</label><input type="number" id="shBase" min="0" value="0"></div>
+    </div>
+    <div class="f"><label>Facilities available</label><div class="checks" id="shFac"></div></div>
+    <div class="dlg-actions"><button type="button" class="btn" data-close>Cancel</button><button class="btn primary" type="submit">Save shelter</button></div>
+  </form>
+</dialog>
+
+<!-- Group dialog -->
+<dialog id="gDlg">
+  <form method="dialog" id="gForm">
+    <h3 id="gDlgTitle">Register people</h3>
+    <div class="f"><label>Name / Family name</label><input id="gName" required></div>
+    <div class="f2">
+      <div class="f"><label>Number of people</label><input type="number" id="gSize" min="1" value="1" required></div>
+      <div class="f"><label>Coming from (zone)</label><select id="gZone"></select></div>
+    </div>
+    <div class="f"><label>Priority</label>
+      <select id="gPriority"><option value="normal">Normal</option><option value="high">High (elderly / children)</option><option value="critical">Critical (medical / life-threatening)</option></select>
+    </div>
+    <div class="f"><label>Special requirements</label><div class="checks" id="gNeeds"></div></div>
+    <div class="dlg-actions"><button type="button" class="btn" data-close>Cancel</button><button class="btn primary" type="submit">Save</button></div>
+  </form>
+</dialog>
+
+<div id="toasts"></div>
+
+<script>
+/* ================= CONFIG ================= */
+const ZONES = ["North","South","East","West","Central"];
+const FAC = {
+  medical:"🩺 Medical aid",
+  wheelchair:"♿ Wheelchair access",
+  childcare:"👶 Infant / child care",
+  pets:"🐾 Pets allowed",
+  women:"👩‍👧 Women & family section",
+  power:"🔌 Power backup"
+};
+const PRI_RANK = {critical:0, high:1, normal:2};
+const KEY = "shelterAlloc.v1";
+
+/* ================= STATE ================= */
+let state = load() || seed();
+let selectedGroup = null;
+let editingShelter = null, editingGroup = null;
+
+const uid = () => Math.random().toString(36).slice(2,9);
+function save(){ localStorage.setItem(KEY, JSON.stringify(state)); }
+function load(){ try{ return JSON.parse(localStorage.getItem(KEY)); }catch(e){ return null; } }
+function seed(){
+  const sh = [
+    {id:"s1",name:"Govt. Senior Secondary School",zone:"North",capacity:300,base:120,status:"open",fac:["medical","wheelchair","power"]},
+    {id:"s2",name:"Community Hall – Sector 7",zone:"East",capacity:120,base:40,status:"open",fac:["childcare","women","pets"]},
+    {id:"s3",name:"State Sports Stadium",zone:"Central",capacity:600,base:350,status:"open",fac:["medical","wheelchair","power","childcare","women"]},
+    {id:"s4",name:"Gurudwara Langar Hall",zone:"West",capacity:200,base:150,status:"open",fac:["women","pets"]},
+    {id:"s5",name:"Miltary Hospital",zone:"South",capacity:80,base:30,status:"open",fac:["medical","wheelchair","power"]},
+    {id:"s6",name:"New Town Warehouse",zone:"South",capacity:150,base:0,status:"closed",fac:["pets"]}
+  ];
+  const g = [
+    {id:"g1",name:"Sharma Family",size:5,zone:"North",needs:["childcare"],priority:"high",shelterId:null},
+    {id:"g2",name:"Mr. Gill (dialysis patient)",size:2,zone:"South",needs:["medical","power","wheelchair"],priority:"critical",shelterId:null},
+    {id:"g3",name:"Khan Family",size:6,zone:"East",needs:["women","pets"],priority:"normal",shelterId:null},
+    {id:"g4",name:"Verma Family",size:4,zone:"Central",needs:[],priority:"normal",shelterId:null},
+    {id:"g5",name:"Mrs. Kaur + 3 children",size:4,zone:"West",needs:["women","childcare"],priority:"high",shelterId:null},
+    {id:"g6",name:"Old-age home group",size:18,zone:"North",needs:["wheelchair","medical"],priority:"critical",shelterId:null},
+    {id:"g7",name:"Singh Family",size:3,zone:"West",needs:["pets"],priority:"normal",shelterId:null},
+    {id:"g8",name:"Daily-wage workers camp",size:35,zone:"Central",needs:[],priority:"normal",shelterId:null},
+    {id:"g9",name:"Bhullar  Family",size:5,zone:"East",needs:["childcare"],priority:"normal",shelterId:null},
+    {id:"g10",name:"Rao Family (newborn)",size:3,zone:"South",needs:["childcare","medical"],priority:"high",shelterId:null}
+  ];
+  return {shelters:sh, groups:g, log:[{t:Date.now(),m:"System initialised with demo data"}]};
+}
+
+/* ================= HELPERS ================= */
+const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+const esc = s => String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const shelterById = id => state.shelters.find(s=>s.id===id);
+const groupById = id => state.groups.find(g=>g.id===id);
+function occ(s){ return s.base + state.groups.filter(g=>g.shelterId===s.id).reduce((a,g)=>a+g.size,0); }
+function free(s){ return Math.max(0, s.capacity - occ(s)); }
+function pct(s){ return Math.min(100, Math.round(occ(s)/s.capacity*100)); }
+function shState(s){ if(s.status==="closed") return "closed"; return free(s)===0 ? "full" : "open"; }
+function barClass(p){ return p>=90?"r":p>=70?"a":"g"; }
+function log(m){ state.log.unshift({t:Date.now(),m}); state.log = state.log.slice(0,60); }
+function toast(msg,type=""){ const d=document.createElement("div"); d.className="toast "+type; d.textContent=msg; $("#toasts").appendChild(d); setTimeout(()=>d.remove(),3500); }
+const chips = (arr,cls="") => arr.length ? arr.map(k=>`<span class="chip ${cls}">${FAC[k]}</span>`).join("") : `<span class="chip gray">None</span>`;
+
+/* ================= MATCHING ENGINE ================= */
+function evaluate(g, s){
+  const reasons = [];
+  if(s.status==="closed") reasons.push("Shelter is closed");
+  if(free(s) < g.size) reasons.push(`Only ${free(s)} spots free (needs ${g.size})`);
+  const missing = g.needs.filter(n=>!s.fac.includes(n));
+  if(missing.length) reasons.push("Missing: "+missing.map(m=>FAC[m].replace(/^\S+\s/,"")).join(", "));
+  if(reasons.length) return {ok:false, reasons, score:0};
+  let score = 50;
+  const notes = [];
+  if(g.zone===s.zone){ score+=25; notes.push("Same zone (near home)"); }
+  const freeAfter = (free(s)-g.size)/s.capacity;
+  score += Math.round(freeAfter*20);
+  if(g.needs.length){ score += Math.min(10, g.needs.length*4); notes.push("All "+g.needs.length+" requirement(s) met"); }
+  else notes.push("No special requirements");
+  notes.push(`${free(s)-g.size} spots will remain`);
+  return {ok:true, reasons:[], notes, score:Math.min(99, score)};
+}
+function rank(g){
+  return state.shelters.map(s=>({s, ev:evaluate(g,s)}))
+    .sort((a,b)=> (b.ev.ok-a.ev.ok) || (b.ev.score-a.ev.score) || (free(b.s)-free(a.s)));
+}
+function allocate(gid, sid, silent){
+  const g=groupById(gid), s=shelterById(sid);
+  const ev = evaluate(g,s);
+  if(!ev.ok){ toast("Cannot allocate: "+ev.reasons.join("; "),"err"); return false; }
+  g.shelterId = sid;
+  log(`${g.name} (${g.size}) → ${s.name}`);
+  save();
+  if(!silent){ toast(`${g.name} allocated to ${s.name}`,"ok"); renderAll(); }
+  return true;
+}
+function release(gid){
+  const g=groupById(gid); if(!g||!g.shelterId) return;
+  const s=shelterById(g.shelterId);
+  log(`${g.name} released from ${s?s.name:"shelter"}`);
+  g.shelterId=null; save(); renderAll(); toast("Released – back in waiting queue");
+}
+function autoAllocate(){
+  const waiting = state.groups.filter(g=>!g.shelterId)
+    .sort((a,b)=> PRI_RANK[a.priority]-PRI_RANK[b.priority] || b.needs.length-a.needs.length || b.size-a.size);
+  if(!waiting.length){ toast("No one is waiting"); return; }
+  let done=0, fail=[];
+  waiting.forEach(g=>{
+    const best = rank(g).find(r=>r.ev.ok);
+    if(best){ allocate(g.id,best.s.id,true); done++; } else fail.push(g);
+  });
+  log(`Auto-allocation: ${done} placed, ${fail.length} unplaced`);
+  save(); renderAll();
+  if(fail.length) toast(`${done} allocated. ${fail.length} could not be placed (check requirements/capacity).`,"err");
+  else toast(`All ${done} groups allocated successfully!`,"ok");
+}
+
+/* ================= RENDER ================= */
+function renderAll(){
+  $("#waitBadge").textContent = state.groups.filter(g=>!g.shelterId).length;
+  renderDash(); renderShelters(); renderPeople(); renderAlloc();
+}
+
+function renderDash(){
+  const open = state.shelters.filter(s=>s.status==="open");
+  const cap = open.reduce((a,s)=>a+s.capacity,0);
+  const oc = open.reduce((a,s)=>a+occ(s),0);
+  const fr = cap-oc;
+  const wait = state.groups.filter(g=>!g.shelterId);
+  const waitPeople = wait.reduce((a,g)=>a+g.size,0);
+  const placed = state.groups.filter(g=>g.shelterId).reduce((a,g)=>a+g.size,0);
+  const crit = wait.filter(g=>g.priority==="critical").length;
+  $("#kpis").innerHTML = `
+    <div class="kpi"><div class="v">${open.length}<small style="font-size:14px;color:var(--muted)"> / ${state.shelters.length}</small></div><div class="l">Shelters open</div></div>
+    <div class="kpi"><div class="v">${cap}</div><div class="l">Total capacity</div></div>
+    <div class="kpi ${cap&&oc/cap>.85?"red":"amber"}"><div class="v">${oc}</div><div class="l">Occupied (${cap?Math.round(oc/cap*100):0}%)</div></div>
+    <div class="kpi green"><div class="v">${fr}</div><div class="l">Beds available</div></div>
+    <div class="kpi ${waitPeople?"red":"green"}"><div class="v">${waitPeople}</div><div class="l">People waiting</div></div>
+    <div class="kpi"><div class="v">${placed}</div><div class="l">People allocated</div></div>
+    <div class="kpi ${crit?"red":"green"}"><div class="v">${crit}</div><div class="l">Critical cases waiting</div></div>`;
+
+  $("#dashBars").innerHTML = state.shelters.length ? state.shelters.map(s=>{
+    const p=pct(s), st=shState(s);
+    return `<div style="margin-bottom:14px">
+      <div class="row" style="display:flex;justify-content:space-between;margin-bottom:4px">
+        <b>${esc(s.name)} <span class="chip gray">${s.zone}</span></b>
+        <span><span class="pill ${st}">${st}</span> &nbsp;${occ(s)}/${s.capacity}</span>
+      </div>
+      <div class="bar"><div class="${barClass(p)}" style="width:${p}%"></div></div>
+    </div>`;}).join("") : `<div class="empty">No shelters yet</div>`;
+
+  // alerts
+  const al=[];
+  state.shelters.filter(s=>s.status==="open"&&pct(s)>=90).forEach(s=>al.push(`<div class="alert r">🔴 <b>${esc(s.name)}</b> is ${pct(s)}% full (${free(s)} left)</div>`));
+  wait.filter(g=>g.priority==="critical").forEach(g=>al.push(`<div class="alert r">🚨 Critical: <b>${esc(g.name)}</b> (${g.size}) waiting</div>`));
+  wait.forEach(g=>{ if(!rank(g).some(r=>r.ev.ok)) al.push(`<div class="alert a">⚠️ No shelter can currently host <b>${esc(g.name)}</b></div>`); });
+  state.shelters.filter(s=>s.status==="closed").forEach(s=>al.push(`<div class="alert a">⏸️ ${esc(s.name)} is closed (${s.capacity} capacity unused)</div>`));
+  if(!al.length) al.push(`<div class="alert g">✅ Everything under control</div>`);
+  $("#alerts").innerHTML = al.slice(0,8).join("");
+
+  // zones
+  $("#zones").innerHTML = ZONES.map(z=>{
+    const sh = state.shelters.filter(s=>s.zone===z&&s.status==="open");
+    const c = sh.reduce((a,s)=>a+s.capacity,0), o = sh.reduce((a,s)=>a+occ(s),0);
+    const p = c?Math.round(o/c*100):0;
+    return `<div class="zone"><div class="row"><b>${z}</b><span>${c?`${o}/${c}`:"no open shelter"}</span></div>
+      <div class="bar"><div class="${barClass(p)}" style="width:${p}%"></div></div></div>`;
+  }).join("");
+
+  $("#log").innerHTML = state.log.slice(0,15).map(l=>`<div><time>${new Date(l.t).toLocaleTimeString()}</time>${esc(l.m)}</div>`).join("");
+}
+
+function renderShelters(){
+  const q = $("#shSearch").value.toLowerCase(), f=$("#shFilter").value;
+  const list = state.shelters.filter(s=>{
+    if(q && !(s.name+s.zone).toLowerCase().includes(q)) return false;
+    if(f==="available") return s.status==="open" && free(s)>0;
+    if(f==="full") return shState(s)==="full";
+    if(f==="closed") return s.status==="closed";
+    return true;
+  });
+  $("#shelterGrid").innerHTML = list.length ? list.map(s=>{
+    const p=pct(s), st=shState(s);
+    const res = state.groups.filter(g=>g.shelterId===s.id);
+    return `<div class="card shelter">
+      <div class="row"><h4>${esc(s.name)}</h4><span class="pill ${st}">${st}</span></div>
+      <div class="meta">📍 ${s.zone} zone</div>
+      <div class="bar"><div class="${barClass(p)}" style="width:${p}%"></div></div>
+      <div class="nums"><span>Capacity <b>${s.capacity}</b></span><span>Occupied <b>${occ(s)}</b> (${p}%)</span><span>Free <b>${free(s)}</b></span></div>
+      <div>${chips(s.fac,"ok")}</div>
+      ${res.length?`<div class="residents"><b>Allocated groups (${res.length})</b>${res.map(g=>`<div class="res"><span>${esc(g.name)} · ${g.size}</span><button class="btn sm ghost" data-release="${g.id}">Release</button></div>`).join("")}</div>`:""}
+      <div class="actions">
+        <button class="btn sm" data-edit-sh="${s.id}">✏️ Edit</button>
+        <button class="btn sm" data-toggle-sh="${s.id}">${s.status==="open"?"⏸ Close":"▶ Open"}</button>
+        <button class="btn sm danger" data-del-sh="${s.id}">🗑 Delete</button>
+      </div></div>`;
+  }).join("") : `<div class="empty card">No shelters match your filter</div>`;
+}
+
+function renderPeople(){
+  const q=$("#pSearch").value.toLowerCase(), st=$("#pStatus").value, pr=$("#pPriority").value;
+  const list = state.groups.filter(g=>{
+    if(q && !(g.name+g.zone).toLowerCase().includes(q)) return false;
+    if(st==="waiting" && g.shelterId) return false;
+    if(st==="allocated" && !g.shelterId) return false;
+    if(pr!=="all" && g.priority!==pr) return false;
+    return true;
+  }).sort((a,b)=>PRI_RANK[a.priority]-PRI_RANK[b.priority]);
+  $("#peopleBody").innerHTML = list.length ? list.map(g=>{
+    const s = g.shelterId?shelterById(g.shelterId):null;
+    return `<tr>
+      <td><b>${esc(g.name)}</b></td><td>${g.size}</td><td>${g.zone}</td>
+      <td>${g.needs.length?chips(g.needs,"need"):'<span class="chip gray">None</span>'}</td>
+      <td><span class="pill ${g.priority}">${g.priority}</span></td>
+      <td>${s?`<span class="chip ok">✔ ${esc(s.name)}</span>`:`<span class="chip bad">Waiting</span>`}</td>
+      <td style="white-space:nowrap">
+        ${s?`<button class="btn sm ghost" data-release="${g.id}">Release</button>`:`<button class="btn sm blue" data-goalloc="${g.id}">Allocate</button>`}
+        <button class="btn sm" data-edit-g="${g.id}">✏️</button>
+        <button class="btn sm danger" data-del-g="${g.id}">🗑</button>
+      </td></tr>`;
+  }).join("") : `<tr><td colspan="7" class="empty">No records</td></tr>`;
+}
+
+function renderAlloc(){
+  const wait = state.groups.filter(g=>!g.shelterId)
+    .sort((a,b)=>PRI_RANK[a.priority]-PRI_RANK[b.priority]);
+  if(selectedGroup && !wait.some(g=>g.id===selectedGroup)) selectedGroup=null;
+  if(!selectedGroup && wait.length) selectedGroup = wait[0].id;
+  $("#queue").innerHTML = wait.length ? wait.map(g=>`
+    <div class="item ${g.id===selectedGroup?"sel":""}" data-pick="${g.id}">
+      <div class="top"><b>${esc(g.name)}</b><span class="pill ${g.priority}">${g.priority}</span></div>
+      <div style="font-size:12px;color:var(--muted);margin:3px 0">${g.size} people · from ${g.zone}</div>
+      <div>${chips(g.needs,"need")}</div></div>`).join("") : `<div class="empty">🎉 Nobody is waiting</div>`;
+
+  const g = selectedGroup?groupById(selectedGroup):null;
+  if(!g){ $("#recTitle").textContent="Select a group to see matching shelters"; $("#recs").innerHTML=`<div class="empty">No group selected</div>`; return; }
+  $("#recTitle").textContent = `Best matches for: ${g.name} (${g.size} people)`;
+  const r = rank(g);
+  $("#recs").innerHTML = r.map((x,i)=>{
+    const {s,ev}=x;
+    if(ev.ok) return `<div class="rec ${i===0?"best":""}">
+      <div class="score">${ev.score}</div>
+      <div class="info"><b>${esc(s.name)}</b> ${i===0?'<span class="chip ok">★ Best match</span>':""}
+        <div style="font-size:12px;color:var(--muted)">${s.zone} · ${free(s)} free of ${s.capacity}</div>
+        <div style="font-size:12px;margin-top:3px">${ev.notes.join(" · ")}</div></div>
+      <button class="btn green" data-alloc="${g.id}|${s.id}">Allocate</button></div>`;
+    return `<div class="rec no"><div class="score">✕</div>
+      <div class="info"><b>${esc(s.name)}</b>
+        <div style="font-size:12px;color:var(--muted)">${s.zone} · ${free(s)} free of ${s.capacity}</div>
+        <div style="margin-top:3px">${ev.reasons.map(t=>`<span class="chip bad">${esc(t)}</span>`).join("")}</div></div></div>`;
+  }).join("");
+}
+
+/* ================= DIALOGS ================= */
+function fillChecks(el, selected){
+  el.innerHTML = Object.entries(FAC).map(([k,v])=>`<label><input type="checkbox" value="${k}" ${selected.includes(k)?"checked":""}> ${v}</label>`).join("");
+}
+const checked = el => [...el.querySelectorAll("input:checked")].map(i=>i.value);
+function zoneOptions(sel){ sel.innerHTML = ZONES.map(z=>`<option>${z}</option>`).join(""); }
+zoneOptions($("#shZone")); zoneOptions($("#gZone"));
+
+function openShelterDlg(id){
+  editingShelter = id||null;
+  const s = id?shelterById(id):{name:"",zone:ZONES[0],capacity:100,base:0,status:"open",fac:[]};
+  $("#shDlgTitle").textContent = id?"Edit shelter":"Add shelter";
+  $("#shName").value=s.name; $("#shZone").value=s.zone; $("#shStatus").value=s.status;
+  $("#shCap").value=s.capacity; $("#shBase").value=s.base; fillChecks($("#shFac"), s.fac);
+  $("#shDlg").showModal();
+}
+$("#shForm").addEventListener("submit",e=>{
+  const cap=+$("#shCap").value, base=+$("#shBase").value;
+  const data = {name:$("#shName").value.trim(), zone:$("#shZone").value, status:$("#shStatus").value, capacity:cap, base, fac:checked($("#shFac"))};
+  if(!data.name||cap<1) return;
+  if(editingShelter){
+    const s=shelterById(editingShelter);
+    const allocated = state.groups.filter(g=>g.shelterId===s.id).reduce((a,g)=>a+g.size,0);
+    if(base+allocated>cap){ e.preventDefault(); toast(`Capacity too low – ${base+allocated} people already there`,"err"); return; }
+    Object.assign(s,data); log(`Shelter updated: ${s.name}`);
+  } else { state.shelters.push({id:uid(),...data}); log(`Shelter added: ${data.name}`); }
+  save(); renderAll(); toast("Shelter saved","ok");
+});
+
+function openGroupDlg(id){
+  editingGroup = id||null;
+  const g = id?groupById(id):{name:"",size:1,zone:ZONES[0],needs:[],priority:"normal"};
+  $("#gDlgTitle").textContent = id?"Edit registration":"Register people";
+  $("#gName").value=g.name; $("#gSize").value=g.size; $("#gZone").value=g.zone; $("#gPriority").value=g.priority;
+  fillChecks($("#gNeeds"), g.needs); $("#gDlg").showModal();
+}
+$("#gForm").addEventListener("submit",()=>{
+  const data={name:$("#gName").value.trim(), size:Math.max(1,+$("#gSize").value), zone:$("#gZone").value, priority:$("#gPriority").value, needs:checked($("#gNeeds"))};
+  if(!data.name) return;
+  if(editingGroup){
+    const g=groupById(editingGroup);
+    Object.assign(g,data);
+    if(g.shelterId){ g.shelterId=null; toast("Details changed – allocation reset, please re-allocate"); }
+    log(`Registration updated: ${g.name}`);
+  } else { state.groups.push({id:uid(),shelterId:null,...data}); log(`Registered: ${data.name} (${data.size})`); }
+  save(); renderAll(); toast("Saved","ok");
+});
+$$("[data-close]").forEach(b=>b.onclick=()=>b.closest("dialog").close());
+
+/* ================= EVENTS ================= */
+$("#nav").onclick = e=>{
+  const b=e.target.closest("button[data-tab]"); if(!b) return;
+  $$("#nav button").forEach(x=>x.classList.toggle("active",x===b));
+  $$("section.tab").forEach(s=>s.classList.toggle("active",s.id==="tab-"+b.dataset.tab));
+  renderAll();
+};
+function goTab(t){ $(`#nav button[data-tab="${t}"]`).click(); }
+$("#addShelter").onclick=()=>openShelterDlg();
+$("#addGroup").onclick=()=>openGroupDlg();
+$("#autoAlloc").onclick=autoAllocate;
+$("#releaseAll").onclick=()=>{
+  if(!confirm("Release ALL allocations?")) return;
+  state.groups.forEach(g=>g.shelterId=null); log("All allocations released"); save(); renderAll();
+};
+["shSearch","shFilter"].forEach(i=>$("#"+i).addEventListener("input",renderShelters));
+["pSearch","pStatus","pPriority"].forEach(i=>$("#"+i).addEventListener("input",renderPeople));
+
+document.body.addEventListener("click",e=>{
+  const t=e.target.closest("button,[data-pick]"); if(!t) return;
+  const d=t.dataset;
+  if(d.release) release(d.release);
+  else if(d.editSh) openShelterDlg(d.editSh);
+  else if(d.toggleSh){ const s=shelterById(d.toggleSh); s.status=s.status==="open"?"closed":"open"; log(`${s.name} ${s.status}`); save(); renderAll(); }
+  else if(d.delSh){
+    const s=shelterById(d.delSh);
+    if(!confirm(`Delete "${s.name}"? Its allocated groups return to the waiting queue.`)) return;
+    state.groups.forEach(g=>{ if(g.shelterId===s.id) g.shelterId=null; });
+    state.shelters=state.shelters.filter(x=>x.id!==s.id); log(`Shelter deleted: ${s.name}`); save(); renderAll();
+  }
+  else if(d.editG) openGroupDlg(d.editG);
+  else if(d.delG){
+    const g=groupById(d.delG); if(!confirm(`Remove "${g.name}"?`)) return;
+    state.groups=state.groups.filter(x=>x.id!==g.id); log(`Removed: ${g.name}`); save(); renderAll();
+  }
+  else if(d.goalloc){ selectedGroup=d.goalloc; goTab("allocation"); }
+  else if(d.pick){ selectedGroup=d.pick; renderAlloc(); }
+  else if(d.alloc){ const [g,s]=d.alloc.split("|"); allocate(g,s); }
+});
+
+/* clock */
+function tick(){ $("#clock").textContent = "LIVE · "+new Date().toLocaleString(); }
+tick(); setInterval(tick,1000);
+
+renderAll();
+</script>
+</body>
+</html>
